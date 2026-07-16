@@ -35,6 +35,7 @@ export default defineConfig({
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   timeout : 90*1000,
+  globalSetup : require.resolve('./utility/GlobalSetUP.ts'),
   
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
