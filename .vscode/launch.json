@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Playwright: Debug @debugg tests (headed, no inspector)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/playwright/cli.js",
+      "args": [
+        "test",
+        "--grep",
+        "@debugg",
+        "--headed"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": [
+        "<node_internals>/**",
+        "node_modules/playwright/**"
+      ],
+      "env": {
+        "NODE_ENV": "qa"
+      }
+    }
+  ]
+}

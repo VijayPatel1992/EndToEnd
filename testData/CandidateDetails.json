@@ -1,0 +1,24 @@
+{
+  "validCandidate": {
+    "firstName": "Vijaykumar",
+    "middleName": "Ramnikbhai",
+    "lastName": "Patel",
+    "vacancy": "Software Engineer",
+    "email": "vijay@gmail.com",
+    "contactNumber": "9876543210",    
+    "keywords": "Playwright, Selenium",
+    "notes": "Automation Engineer",
+    "resumeFile": "info.txt"
+  },
+
+  "candidateWithoutEmail": {
+    "firstName": "Vijaykumar",
+    "middleName": "",
+    "lastName": "Patel",
+    "email": "",
+    "contactNumber": "9876543210",
+    "vacancy": "Software Engineer",
+    "keywords": "",
+    "notes": ""
+  }
+}
