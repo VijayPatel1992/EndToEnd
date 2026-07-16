@@ -10,7 +10,7 @@ let Password : string = process.env.LOGIN_PASSWORD!
 let ObjNavigationPage : navigationPage;
 let ObjLoginPage: loginPage;
 
-test('Open Help Page @debugg', { tag: '@debugg' }, async ({page}) =>{
+test('Open Help Page', async ({page}) =>{
 
     ObjNavigationPage = new navigationPage(page);    
     ObjLoginPage = new loginPage(page);

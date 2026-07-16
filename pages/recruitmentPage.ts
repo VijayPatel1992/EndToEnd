@@ -60,7 +60,7 @@ export class recruitmentPage {
 
     private CandidatDownload_Button(name: string): Locator {
         return this.CandidateRecord_Row(name)
-            .locator('button:has(i.bi-download)');
+            .locator('button:has(i.bi-download)').first();
     }
 
 

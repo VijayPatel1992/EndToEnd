@@ -11,7 +11,7 @@ const Password = process.env.LOGIN_PASSWORD!
 let ObjLoginPage : loginPage;
 let ObjNavigationPage : navigationPage
 
-test('Perform Login and Verify Dashboard', {tag: '@LoginTest'}, async ({page}) =>{
+test('Perform Login and Verify Dashboard',  async ({page}) =>{
     test.setTimeout(60*1000);
 
     ObjLoginPage = new loginPage(page);

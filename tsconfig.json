@@ -11,6 +11,14 @@
   },
   "include": [
     "playwright.config.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "utility/**/*.ts",
+    "pages/**/*.ts",
+    "fixtures/**/*.ts",
+    "configuration/**/*.ts",
+    "constant/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }
