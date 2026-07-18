@@ -1,23 +1,24 @@
-import {test, expect, Page} from '@playwright/test'
+import { test, expect } from '@playwright/test';
 import { navigationPage } from '../pages/navigationPage';
 import { loginPage } from '../pages/loginPage';
+import { attachment } from 'allure-js-commons';
 
-let URL : string = process.env.BASE_URL!
-let UserName : string = process.env.LOGIN_USERNAME!
-let Password : string = process.env.LOGIN_PASSWORD!
+const URL = process.env.BASE_URL!;
 
-
-let ObjNavigationPage : navigationPage;
+let ObjNavigationPage: navigationPage;
 let ObjLoginPage: loginPage;
 
-test('Open Help Page', async ({page}) =>{
-
-    ObjNavigationPage = new navigationPage(page);    
-    ObjLoginPage = new loginPage(page);
-
-    await page.goto(URL);
-    ObjLoginPage.DoLogin(UserName, Password);
-    const HelpPageTab =  await ObjNavigationPage.NavigateToHelpPage();
-    expect((await HelpPageTab)).toHaveURL(/starterhelp\.orangehrm\.com/);
-
+test.beforeEach(async ({page}) => {
+  ObjNavigationPage = new navigationPage(page);
+  ObjLoginPage = new loginPage(page);
+  let NewURL = URL + '/web/index.php/dashboard/index'
+  await page.goto(NewURL);
 })
+
+test('Open Help Page', { tag: "@debugg" }, async ({ page }) => {
+
+  const HelpPageTab = await ObjNavigationPage.NavigateToHelpPage();
+  await expect(HelpPageTab).toHaveURL(/starterhelp\.orangehrm\.com/);
+  test.info().attach(test.info().title.toString());
+  attachment(test.info().title.toString(), await page.screenshot(), 'image/png')
+});
