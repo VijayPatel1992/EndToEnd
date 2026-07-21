@@ -4,17 +4,13 @@ import { loginPage } from '../pages/loginPage';
 import os from 'os';
 import path from 'path';
 
-const URL = process.env.BASE_URL!;
-const userName = process.env.LOGIN_USERNAME!;
-const password = process.env.LOGIN_PASSWORD!;
-
-if (!URL || !userName || !password) {
-  throw new Error(`Missing required environment values. BASE_URL=${!!URL}, LOGIN_USERNAME=${!!userName}, LOGIN_PASSWORD=${!!password}`);
-}
-
 async function globalSetup() {
-  const statePath = path.resolve(process.cwd(), 'storageState.json');
-  const allureDir = path.resolve(process.cwd(), 'allure-results');
+  const URL = process.env.BASE_URL!;
+  const userName = process.env.LOGIN_USERNAME!;
+  const password = process.env.LOGIN_PASSWORD!;
+
+  const statePath = storageStatePath;
+  const allureDir = path.resolve(ROOT_PATH, 'allure-results');
 
   if (!fs.existsSync(statePath) || isExpired(statePath)) {
     const browser = await chromium.launch({ headless: false });
@@ -22,7 +18,7 @@ async function globalSetup() {
     const page = await context.newPage();
 
     const objLoginPage = new loginPage(page);
-    await page.goto(URL, {timeout : 60*1000});
+    await page.goto(URL, { timeout: 60 * 1000 });
     await objLoginPage.DoLogin(userName, password);
 
     await context.storageState({ path: statePath });
@@ -49,12 +45,13 @@ Environment=${process.env.NODE_ENV}
 function isExpired(filePath: string): boolean {
   const stats = fs.statSync(filePath);
   const ageInMin = (Date.now() - stats.mtimeMs) / (1000 * 60);
-  const FileMinutes = ageInMin >5;
+  const FileMinutes = ageInMin > 5;
   return ageInMin > 5;
 }
 
 export default globalSetup;
 
-export const ROOT_PATH = path.resolve(__dirname);
-export const DOWNLOAD_PATH = path.resolve(__dirname, 'downloads');
-export const storageStatePath = path.resolve(process.cwd(), 'storageState.json');
+export const ROOT_PATH = path.join(__dirname, '..');
+export const DOWNLOAD_PATH = path.resolve(ROOT_PATH, 'downloads');
+export const UPLOAD_PATH = path.resolve(ROOT_PATH, 'fileToUpload');
+export const storageStatePath = path.resolve(ROOT_PATH, 'storageState.json');

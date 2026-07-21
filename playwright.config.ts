@@ -1,13 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import path from 'node:path';
+import { ROOT_PATH } from './utility/GlobalSetUp';
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
 const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : `.env.qa`;
-dotenv.config({ path: path.resolve(process.cwd(), 'env', envFile) });
+console.log(path.resolve(ROOT_PATH, 'env', envFile));
+dotenv.config({ path: path.resolve(ROOT_PATH, 'env', envFile) });
 console.log(`ENV file successfully loaded - ${envFile}`);
 
 
@@ -25,7 +27,8 @@ export default defineConfig({
   timeout: 90 * 1000,
   globalSetup: require.resolve('./utility/GlobalSetUp.ts'),
   use: {
-    storageState: path.resolve(__dirname, 'storageState.json'),
+    // storageState: path.resolve(ROOT_PATH, 'storageState.json'),
+    storageState : path.resolve(ROOT_PATH),
     baseURL: process.env.BASE_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
