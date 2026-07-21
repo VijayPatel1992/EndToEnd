@@ -52,6 +52,6 @@ function isExpired(filePath: string): boolean {
 export default globalSetup;
 
 export const ROOT_PATH = path.join(__dirname, '..');
-export const DOWNLOAD_PATH = path.resolve(ROOT_PATH, 'downloads');
+export const DOWNLOAD_PATH = path.resolve(ROOT_PATH, 'download');
 export const UPLOAD_PATH = path.resolve(ROOT_PATH, 'fileToUpload');
 export const storageStatePath = path.resolve(ROOT_PATH, 'storageState.json');

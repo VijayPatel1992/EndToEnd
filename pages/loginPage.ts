@@ -3,21 +3,21 @@ import { Page, Locator } from '@playwright/test';
 export class loginPage {
 
     private readonly page: Page;
-    private readonly UserName_Input : Locator;
-    private readonly Password_Input : Locator;
-    private readonly Login_Btn: Locator;
+    private readonly usernameInput : Locator;
+    private readonly passwordInput : Locator;
+    private readonly loginButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
-     this.UserName_Input = this.page.getByRole('textbox', {name : /username/i});
-        this.Password_Input = this.page.getByRole('textbox', {name : 'password'})
-        this.Login_Btn = this.page.getByRole('button', {name: 'Login'});
+     this.usernameInput = this.page.getByRole('textbox', {name : /username/i});
+        this.passwordInput = this.page.getByRole('textbox', {name : 'password'})
+        this.loginButton = this.page.getByRole('button', {name: 'Login'});
   }
 
   async DoLogin(username: string, password: string) {
-    await this.UserName_Input.fill(username);
-    await this.Password_Input.fill(password);
-    await this.Login_Btn.click();
+    await this.usernameInput.fill(username);
+    await this.passwordInput.fill(password);
+    await this.loginButton.click();
   }
 
 
