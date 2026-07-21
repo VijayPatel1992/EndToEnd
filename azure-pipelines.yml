@@ -1,0 +1,76 @@
+# azure-pipelines.yml
+trigger:
+- none   # Manual run only; you can change to 'main' if you want auto-trigger
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+parameters:
+  - name: environment
+    displayName: "Target Environment"
+    type: string
+    default: "qa"
+    values:
+      - qa
+      - uat
+
+variables:
+- ${{ if eq(parameters.environment, 'qa') }}:
+  - group: QA-Variables
+- ${{ if eq(parameters.environment, 'uat') }}:
+  - group: UAT-Variables
+
+steps:
+  # ✅ Install Node.js 20 via NodeSource
+  - script: |
+      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+      sudo apt-get install -y nodejs
+      echo "Node installed at: $(which node)"
+      node -v
+      npm -v
+    displayName: 'Install Node.js 20 (NodeSource)'
+
+  # ✅ Pin npm version and install dependencies
+  - script: |
+      sudo npm install -g npm@10.5.0
+      npm ci
+    displayName: 'Install dependencies with fixed npm'
+
+  # ✅ Install Playwright browsers (Chrome included)
+  - script: |
+      npx playwright install --with-deps chrome
+    displayName: 'Install Playwright browsers'
+
+  # ✅ Prepare results directory
+  - script: mkdir -p junit-results
+    displayName: 'Make Directory'
+
+  # ✅ Run Playwright tests with environment variables
+  - script: |
+      echo "Running Playwright tests in ${{ parameters.environment }} environment"
+      echo "BASE_URL is $BASE_URL"
+      echo "Username is $TEST_USER_EMAIL"
+
+      npx playwright test --workers=1 --reporter=junit --output=junit-results
+    displayName: 'Run Playwright tests'
+    env:
+      TEST_USER_EMAIL: $(TEST_USER_EMAIL)
+      TEST_PASSWORD: $(TEST_PASSWORD)
+      BASE_URL: $(BASE_URL)
+      NAME: ${{ parameters.environment }}
+
+  # ✅ Publish Playwright HTML report as artifact
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: 'playwright-report'
+      artifactName: 'Playwright-report'
+      publishLocation: 'pipeline'
+    condition: succeededOrFailed()
+
+  # ✅ Publish JUnit test results
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/junit-results/*.xml'
+      testRunTitle: 'Playwright Tests'
+    condition: succeededOrFailed()
