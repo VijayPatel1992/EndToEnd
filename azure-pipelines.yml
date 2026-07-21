@@ -1,6 +1,6 @@
 # azure-pipelines.yml
 trigger:
-- none   # Manual run only; you can change to 'main' if you want auto-trigger
+- none   # Manual run only; change to 'main' if you want auto-trigger
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -36,16 +36,16 @@ steps:
       npm ci
     displayName: 'Install dependencies with fixed npm'
 
-  # ✅ Install Playwright browsers (Chrome included)
+  # ✅ Install Playwright browsers (all required)
   - script: |
-      npx playwright install --with-deps chrome
+      npx playwright install --with-deps
     displayName: 'Install Playwright browsers'
 
   # ✅ Prepare results directory
   - script: mkdir -p junit-results
     displayName: 'Make Directory'
 
-  # ✅ Run Playwright tests with environment variables
+  # ✅ Run Playwright tests with JUnit output
   - script: |
       echo "Running Playwright tests in ${{ parameters.environment }} environment"
       echo "BASE_URL is $BASE_URL"
