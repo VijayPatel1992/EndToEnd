@@ -38,15 +38,16 @@ export default defineConfig({
     ['junit', { outputFile: path.join(__dirname, 'junit-results', 'junit-report.xml') }],
     ['allure-playwright', { resultsDir: 'allure-results' }]
   ],
-  timeout: 90 * 1000,
+  timeout: 40 * 1000,
   globalSetup: require.resolve('./utility/GlobalSetUp.ts'),
+  
   
   use: {
     ...(finalStorageStatePath ? { storageState: finalStorageStatePath } : {}),
     baseURL: process.env.BASE_URL,
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    trace: 'on',
+    screenshot: 'on',
+    video: 'on',
   },
   
   projects: [

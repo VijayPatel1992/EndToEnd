@@ -22,50 +22,36 @@ async function globalSetup() {
 
     const allureDir = path.resolve(ROOT_PATH, 'allure-results');
 
-    // Check if storage state needs to be created
-    if (!fs.existsSync(storageStatePath) || isExpired(storageStatePath)) {
+    // 🔑 Force fresh login in CI/CD
+    const forceRefresh = !!process.env.CI;
+
+    if (forceRefresh || !fs.existsSync(storageStatePath) || isExpired(storageStatePath)) {
       console.log('Creating new storage state...');
       
-      let browser;
-      try {
-        // Use headless: true for CI/CD compatibility
-        browser = await chromium.launch({ headless: true });
-        const context = await browser.newContext();
-        const page = await context.newPage();
+      const browser = await chromium.launch({ headless: false });
+      const context = await browser.newContext();
+      const page = await context.newPage();
 
-        console.log(`Logging in as: ${userName}`);
-        const objLoginPage = new loginPage(page);
-        
-        await page.goto(URL, { waitUntil: 'networkidle', timeout: 60 * 1000 });
-        await objLoginPage.DoLogin(userName, password);
-        
-        // Wait for navigation after login
-        await page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30 * 1000 }).catch(() => {
-          console.log('No navigation detected after login, continuing...');
-        });
+      console.log(`Logging in as: ${userName}`);
+      const objLoginPage = new loginPage(page);
 
-        // Save storage state with proper error handling
-        await context.storageState({ path: storageStatePath });
-        console.log('Storage state saved successfully');
-        
-        await context.close();
-        await browser.close();
-      } catch (error) {
-        console.error('Error during login/storage state creation:', error);
-        if (browser) {
-          try {
-            await browser.close();
-          } catch (closeError) {
-            console.error('Error closing browser:', closeError);
-          }
-        }
-        throw error;
-      }
+      await page.goto(URL, { waitUntil: 'networkidle', timeout: 60 * 1000 });
+      await objLoginPage.DoLogin(userName, password);
+
+      // ✅ Assert login success before saving
+      //await page.waitForSelector('#dashboard', { timeout: 30 * 1000 });
+
+      await context.storageState({ path: storageStatePath });
+      console.log('Storage state saved successfully');
+       console.log(`File created Cross verification in global set up: ${fs.existsSync(storageStatePath)}`);
+
+      await context.close();
+      await browser.close();
     } else {
       console.log('Using existing storage state (valid and not expired)');
     }
 
-    // Create allure environment properties
+    // Environment properties for Allure
     const envDetails = `Browser=${process.env.BROWSER || 'chromium'}
 OS=${os.type()} ${os.release()}
 Node=${process.version}
@@ -91,11 +77,12 @@ Environment=${process.env.NODE_ENV}
   }
 }
 
+
 function isExpired(filePath: string): boolean {
   try {
     const stats = fs.statSync(filePath);
     const ageInMin = (Date.now() - stats.mtimeMs) / (1000 * 60);
-    const expired = ageInMin > 120;
+    const expired = ageInMin > 30;
     console.log(`Storage state age: ${ageInMin.toFixed(2)} minutes, Expired: ${expired}`);
     return expired;
   } catch (error) {
