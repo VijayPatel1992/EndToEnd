@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import path from 'node:path';
+import * as fs from 'fs';
 import { ROOT_PATH, storageStatePath } from './utility/GlobalSetUp';
 
 /**
@@ -8,11 +9,24 @@ import { ROOT_PATH, storageStatePath } from './utility/GlobalSetUp';
  * https://github.com/motdotla/dotenv
  */
 const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : `.env.qa`;
-console.log(path.resolve(ROOT_PATH, 'env', envFile));
+console.log('Loading env file from:', path.resolve(ROOT_PATH, 'env', envFile));
 dotenv.config({ path: path.resolve(ROOT_PATH, 'env', envFile) });
 console.log(`ENV file successfully loaded - ${envFile}`);
 
 console.log('Storage state path in Config file:', storageStatePath);
+console.log('Storage state file exists:', fs.existsSync(storageStatePath));
+
+// Determine which storage state to use
+let finalStorageStatePath: string | undefined;
+if (fs.existsSync(storageStatePath)) {
+  finalStorageStatePath = storageStatePath;
+  console.log('✓ Using existing storage state file');
+} else {
+  console.warn('⚠ Storage state file does not exist yet. It will be created by globalSetup.');
+  // Don't set storageState in use config if file doesn't exist yet
+  // It will be created during globalSetup
+}
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -28,8 +42,7 @@ export default defineConfig({
   globalSetup: require.resolve('./utility/GlobalSetUp.ts'),
   
   use: {
-    // storageState: path.resolve(ROOT_PATH, 'storageState.json'),
-    storageState : storageStatePath,
+    ...(finalStorageStatePath ? { storageState: finalStorageStatePath } : {}),
     baseURL: process.env.BASE_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
