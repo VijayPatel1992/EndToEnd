@@ -9,7 +9,7 @@ async function globalSetup() {
   const userName = process.env.LOGIN_USERNAME!;
   const password = process.env.LOGIN_PASSWORD!;
 
-  const statePath = storageStatePath;
+  const statePath = path.resolve(__dirname, '..', 'storageState.json');
   const allureDir = path.resolve(ROOT_PATH, 'allure-results');
 
   if (!fs.existsSync(statePath) || isExpired(statePath)) {
@@ -20,8 +20,8 @@ async function globalSetup() {
     const objLoginPage = new loginPage(page);
     await page.goto(URL, { timeout: 60 * 1000 });
     await objLoginPage.DoLogin(userName, password);
-
-    await context.storageState({ path: statePath });
+console.log('Storage state path in global set up:', path.resolve(__dirname, '..', 'storageState.json'));
+    await context.storageState({ path: path.resolve(__dirname, '..', 'storageState.json') });
     await browser.close();
   }
 
@@ -45,8 +45,7 @@ Environment=${process.env.NODE_ENV}
 function isExpired(filePath: string): boolean {
   const stats = fs.statSync(filePath);
   const ageInMin = (Date.now() - stats.mtimeMs) / (1000 * 60);
-  const FileMinutes = ageInMin > 5;
-  return ageInMin > 5;
+  return ageInMin > 120;
 }
 
 export default globalSetup;
