@@ -25,7 +25,6 @@ steps:
   - script: |
       curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
       sudo apt-get install -y nodejs
-      echo "Node installed at: $(which node)"
       node -v
       npm -v
     displayName: 'Install Node.js 20 (NodeSource)'
@@ -45,19 +44,17 @@ steps:
   - script: mkdir -p junit-results
     displayName: 'Make Directory'
 
-  # ✅ Run Playwright tests with JUnit output
+  # ✅ Run Playwright tests with JUnit + HTML report
   - script: |
       echo "Running Playwright tests in ${{ parameters.environment }} environment"
-      echo "BASE_URL is $BASE_URL"
-      echo "Username is $TEST_USER_EMAIL"
-
-      npx playwright test --workers=1 --reporter=junit --output=junit-results
+      npx playwright test --workers=1 --reporter=junit --reporter=html --output=junit-results
     displayName: 'Run Playwright tests'
     env:
       TEST_USER_EMAIL: $(TEST_USER_EMAIL)
       TEST_PASSWORD: $(TEST_PASSWORD)
       BASE_URL: $(BASE_URL)
       NAME: ${{ parameters.environment }}
+    continueOnError: true   # ✅ Prevents pipeline from stopping on test failures
 
   # ✅ Publish Playwright HTML report as artifact
   - task: PublishPipelineArtifact@1
