@@ -24,6 +24,13 @@ async function globalSetup() {
 
     // 🔑 Force fresh login in CI/CD
     const forceRefresh = !!process.env.CI;
+console.log(`Force Refresh: ${forceRefresh}`);
+    console.log(`File Exist: ${fs.existsSync(storageStatePath)}`);
+
+if (forceRefresh && fs.existsSync(storageStatePath)) {
+  fs.unlinkSync(storageStatePath);
+  console.log("File deleted forcefully.");
+}
 
     if (forceRefresh || !fs.existsSync(storageStatePath) || isExpired(storageStatePath)) {
       console.log('Creating new storage state...');
