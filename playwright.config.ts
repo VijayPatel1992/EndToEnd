@@ -12,7 +12,7 @@ console.log(path.resolve(ROOT_PATH, 'env', envFile));
 dotenv.config({ path: path.resolve(ROOT_PATH, 'env', envFile) });
 console.log(`ENV file successfully loaded - ${envFile}`);
 
-
+console.log('Storage state path in Config file:', storageStatePath);
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -26,9 +26,10 @@ export default defineConfig({
   ],
   timeout: 90 * 1000,
   globalSetup: require.resolve('./utility/GlobalSetUp.ts'),
+  
   use: {
     // storageState: path.resolve(ROOT_PATH, 'storageState.json'),
-    storageState : path.resolve(storageStatePath),
+    storageState : storageStatePath,
     baseURL: process.env.BASE_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
