@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import path from 'node:path';
-import { ROOT_PATH } from './utility/GlobalSetUp';
+import { ROOT_PATH, storageStatePath } from './utility/GlobalSetUp';
 
 /**
  * Read environment variables from file.
@@ -28,7 +28,7 @@ export default defineConfig({
   globalSetup: require.resolve('./utility/GlobalSetUp.ts'),
   use: {
     // storageState: path.resolve(ROOT_PATH, 'storageState.json'),
-    storageState : path.resolve(ROOT_PATH),
+    storageState : path.resolve(storageStatePath),
     baseURL: process.env.BASE_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',

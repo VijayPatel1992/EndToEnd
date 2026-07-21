@@ -15,7 +15,7 @@ test.beforeEach(async ({page}) => {
   await page.goto(NewURL);
 })
 
-test('Open Help Page', { tag: "@debugg" }, async ({ page }) => {
+test('Open Help Page', async ({ page }) => {
 
   const HelpPageTab = await ObjNavigationPage.NavigateToHelpPage();
   await expect(HelpPageTab).toHaveURL(/starterhelp\.orangehrm\.com/);

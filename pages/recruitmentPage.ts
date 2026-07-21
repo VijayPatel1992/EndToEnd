@@ -1,40 +1,34 @@
 import { test, Page, Locator } from '@playwright/test'
 import path from 'node:path';
-import {UPLOAD_PATH, DOWNLOAD_PATH} from '../utility/GlobalSetUp'
+import { UPLOAD_PATH, DOWNLOAD_PATH } from '../utility/GlobalSetUp'
 
 export class recruitmentPage {
     private page: Page;
-    private Add_Button: Locator;
-    private FirstName_Txb: Locator;
-    private LastName_Txb: Locator;
-    private MiddleName_Txb: Locator;
-    private Browse_Btn: Locator;
-    private Consent_CheckBox: Locator;
-    private Save_Button: Locator;
-    private Search_Button: Locator;
-    private DeleteConfirm_Button: Locator;
+    private addButton: Locator;
+    private firstNameInput: Locator;
+    private lastNameInput: Locator;
+    private middleNameInput: Locator;
+    private browseButton: Locator;
+    private consentCheckBox: Locator;
+    private saveButton: Locator;
+    private searchButton: Locator;
+    private deleteConfirmButton: Locator;
+    private allCandidate: Locator;
 
     constructor(page: Page) {
         this.page = page;
-        this.Add_Button = this.page.getByRole('button', { name: 'Add' });
-        this.FirstName_Txb = this.page.getByRole('textbox', { name: 'First Name' })
-        this.MiddleName_Txb = this.page.getByRole('textbox', { name: 'Middle Name' })
-        this.LastName_Txb = this.page.getByRole('textbox', { name: 'Last Name' })
-        this.Browse_Btn = this.page.getByText('Browse', { exact: true });
-        this.Consent_CheckBox = this.page.getByText('Consent to keep data', { exact: true });
-        this.Save_Button = this.page.getByRole('button', { name: "Save" })
-        this.Search_Button = this.page.getByRole('button', { name: "Search" });
-        this.DeleteConfirm_Button = this.page.getByRole('button', { name: "Yes, Delete" })
+        this.addButton = this.page.getByRole('button', { name: 'Add' });
+        this.firstNameInput = this.page.getByRole('textbox', { name: 'First Name' })
+        this.middleNameInput = this.page.getByRole('textbox', { name: 'Middle Name' })
+        this.lastNameInput = this.page.getByRole('textbox', { name: 'Last Name' })
+        this.browseButton = this.page.getByText('Browse', { exact: true });
+        this.consentCheckBox = this.page.getByText('Consent to keep data', { exact: true });
+        this.saveButton = this.page.getByRole('button', { name: "Save" })
+        this.searchButton = this.page.getByRole('button', { name: "Search" });
+        this.deleteConfirmButton = this.page.getByRole('button', { name: "Yes, Delete" });
+        this.allCandidate = this.page.locator(`div[role ="row"]>div:nth-child(3) div`);
     }
 
-    // private getDropdown(label: string): Locator {
-    //     return this.page
-    //         .locator('.oxd-input-group')
-    //         .filter({
-    //             has: this.page.locator('label', { hasText: label })
-    //         })
-    //         .locator('.oxd-select-text');
-    // }
 
     private GetDropDownOptions(option: string): Locator {
         return this.page.getByRole('option').filter({ hasText: option }).first();
@@ -67,15 +61,18 @@ export class recruitmentPage {
 
 
     public async AddCandidate() {
-        await this.Add_Button.click();
+        await this.addButton.click();
     }
 
+    public async SaveCandidate() {
+        await this.saveButton.click();
+    }
     public async FillCandidateDetails(
         candidateData: Record<string, string>) {
-        await this.FirstName_Txb.click();
-        await this.FirstName_Txb.fill(candidateData['firstName']);
-        await this.MiddleName_Txb.fill(candidateData['middleName']);
-        await this.LastName_Txb.fill(candidateData['lastName']);
+        await this.firstNameInput.click();
+        await this.firstNameInput.fill(candidateData['firstName']);
+        await this.middleNameInput.fill(candidateData['middleName']);
+        await this.lastNameInput.fill(candidateData['lastName']);
         await this.getDropdown("Vacancy").click();
         await this.GetDropDownOptions(candidateData['vacancy']).click();
         await this.getTextBox("Email").fill(candidateData['email']);
@@ -83,22 +80,25 @@ export class recruitmentPage {
         const FilePath = path.resolve(UPLOAD_PATH, candidateData['resumeFile']);
         const [filechooser] = await Promise.all([
             this.page.waitForEvent('filechooser'),
-            this.Browse_Btn.click()
+            this.browseButton.click()
         ])
         await filechooser.setFiles(FilePath);
         await this.getTextBox("Keywords").fill(candidateData['keywords']);
         await this.getTextArea("Notes").fill(candidateData['notes']);
-        await this.Consent_CheckBox.click();
-        await this.Save_Button.click();
-        await this.page.waitForTimeout(1000);
+        await this.consentCheckBox.click();
 
     }
 
     public async SearchCandidate(SearchText: string, fullName: string) {
-        await this.getTextBox("Candidate Name").fill(SearchText);
-        await this.GetDropDownOptions(fullName).click();
-        await this.Search_Button.click();
-    }
+
+        await test.step(`Search for candidate ${SearchText}`, async () => {
+            await this.getTextBox("Candidate Name").fill(SearchText);
+            await this.GetDropDownOptions(fullName).click();
+            await this.searchButton.click();
+        }
+    )}
+        
+    
 
     public async DownloadCandidateDetails(fullName: string) {
 
@@ -113,7 +113,14 @@ export class recruitmentPage {
         const fileName = path.join(DownloadPath, await download.suggestedFilename());
         console.log(fileName);
         await download.saveAs(fileName);
+        return fileName;
 
+    }
+
+    public async GetAllCandidates() {
+        await this.allCandidate.first().waitFor({ state: 'visible' });
+        const AllCandidateName = await this.allCandidate.allTextContents();
+        return AllCandidateName;
     }
 
 
