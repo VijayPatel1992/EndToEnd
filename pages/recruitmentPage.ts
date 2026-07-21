@@ -1,5 +1,6 @@
 import { test, Page, Locator } from '@playwright/test'
 import path from 'node:path';
+import {UPLOAD_PATH, DOWNLOAD_PATH} from '../utility/GlobalSetUp'
 
 export class recruitmentPage {
     private page: Page;
@@ -79,7 +80,7 @@ export class recruitmentPage {
         await this.GetDropDownOptions(candidateData['vacancy']).click();
         await this.getTextBox("Email").fill(candidateData['email']);
         await this.getTextBox("Contact Number").fill(candidateData['contactNumber']);
-        const FilePath = path.resolve(process.cwd(), "fileToUpload", candidateData['resumeFile']);
+        const FilePath = path.resolve(UPLOAD_PATH, candidateData['resumeFile']);
         const [filechooser] = await Promise.all([
             this.page.waitForEvent('filechooser'),
             this.Browse_Btn.click()
@@ -101,7 +102,7 @@ export class recruitmentPage {
 
     public async DownloadCandidateDetails(fullName: string) {
 
-        const DownloadPath = path.join(process.cwd(), "download")
+        const DownloadPath = DOWNLOAD_PATH;
 
         const [download] = await Promise.all([
             this.page.waitForEvent('download'),

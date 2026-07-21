@@ -20,5 +20,5 @@ test('Open Help Page', { tag: "@debugg" }, async ({ page }) => {
   const HelpPageTab = await ObjNavigationPage.NavigateToHelpPage();
   await expect(HelpPageTab).toHaveURL(/starterhelp\.orangehrm\.com/);
   test.info().attach(test.info().title.toString());
-  attachment(test.info().title.toString(), await page.screenshot(), 'image/png')
+  attachment(test.info().title.toString(), await HelpPageTab.screenshot(), 'image/png')
 });
