@@ -57,6 +57,10 @@ jobs:
     name: Run Playwright Tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      BASE_URL: ${{ secrets.BASE_URL }}
+      LOGIN_USERNAME: ${{ secrets.LOGIN_USERNAME }}
+      LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
 
     steps:
       - name: Checkout code
@@ -73,6 +77,19 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
+
+      - name: Install xvfb (for headed mode on Linux)
+        if: github.event.inputs.test_mode == 'headed' || github.event.inputs.test_mode == 'headed-debug'
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Create environment file
+        run: |
+          mkdir -p env
+          cat > env/.env.${{ github.event.inputs.environment }} << 'EOF'
+          BASE_URL=${{ secrets.BASE_URL }}
+          LOGIN_USERNAME=${{ secrets.LOGIN_USERNAME }}
+          LOGIN_PASSWORD=${{ secrets.LOGIN_PASSWORD }}
+          EOF
 
       - name: Display test configuration
         run: |
@@ -103,7 +120,7 @@ jobs:
       - name: Run tests - Headed mode
         if: github.event.inputs.test_mode == 'headed'
         run: |
-          npx playwright test \
+          xvfb-run -a npx playwright test \
             ${{ github.event.inputs.test_filter && format('--grep {0}', github.event.inputs.test_filter) || '' }} \
             --project=${{ github.event.inputs.browser }} \
             --workers=${{ github.event.inputs.workers }} \
@@ -123,7 +140,7 @@ jobs:
       - name: Run tests - Headed Debug mode
         if: github.event.inputs.test_mode == 'headed-debug'
         run: |
-          npx playwright test \
+          xvfb-run -a npx playwright test \
             ${{ github.event.inputs.test_filter && format('--grep {0}', github.event.inputs.test_filter) || '' }} \
             --project=${{ github.event.inputs.browser }} \
             --workers=1 \
@@ -167,30 +184,6 @@ jobs:
           files: junit-results/junit-report.xml
           check_name: Playwright Test Results
           comment_title: Test Results Summary
-
-      - name: Comment PR with Report Links
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId,
-            });
-            const htmlReport = artifacts.data.artifacts.find(a => a.name === 'playwright-html-report');
-            const allureReport = artifacts.data.artifacts.find(a => a.name === 'allure-report');
-            
-            let comment = '## 📊 Playwright Test Reports\n\n';
-            if (htmlReport) comment += `- [📈 HTML Report](${context.payload.pull_request._links.html.href}/checks)\n`;
-            if (allureReport) comment += `- [📊 Allure Report](${context.payload.pull_request._links.html.href}/checks)\n`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
 
       - name: Test Summary
         if: always()
