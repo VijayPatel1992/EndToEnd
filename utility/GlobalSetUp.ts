@@ -34,8 +34,8 @@ if (forceRefresh && fs.existsSync(storageStatePath)) {
 
     if (forceRefresh || !fs.existsSync(storageStatePath) || isExpired(storageStatePath)) {
       console.log('Creating new storage state...');
-      
-      const browser = await chromium.launch({ headless: false });
+      const browser = await chromium.launch({ headless: true });
+      //const browser = await chromium.launch({ headless: false });
       const context = await browser.newContext();
       const page = await context.newPage();
 
