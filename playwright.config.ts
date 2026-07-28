@@ -10,14 +10,15 @@ import { ROOT_PATH } from './utility/GlobalSetUp';
  */
 
 const isCI = !!process.env.CI;
-const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : `.env.qa`;
-
-console.log('Loading env file from:', path.resolve(ROOT_PATH, 'env', envFile));
-dotenv.config({ path: path.resolve(ROOT_PATH, 'env', envFile) });
-console.log(`ENV file successfully loaded - ${envFile}`);
+console.log(`executing in CI : ${isCI}`)
 
 
-
+if (!isCI) {
+  const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : `.env.qa`;
+  console.log('Loading env file from:', path.resolve(ROOT_PATH, 'env', envFile));
+  dotenv.config({ path: path.resolve(ROOT_PATH, 'env', envFile) });
+  console.log(`ENV file successfully loaded - ${envFile}`);
+}
 
 export default defineConfig({
   testDir: './tests',
@@ -34,16 +35,16 @@ export default defineConfig({
   globalSetup: isCI
     ? require.resolve('./dist/utility/GlobalSetUp.js')
     : require.resolve('./utility/GlobalSetUp.ts'),
-    
-  
+
+
   use: {
-    storageState:  path.resolve(ROOT_PATH, 'storageState.json'),
+    storageState: path.resolve(ROOT_PATH, 'storageState.json'),
     baseURL: process.env.BASE_URL,
-    trace: 'on',
-    screenshot: 'on',
-    video: 'on',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
-  
+
   projects: [
     {
       name: 'chromium',
