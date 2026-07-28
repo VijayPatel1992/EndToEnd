@@ -24,11 +24,11 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [
     ['html'],
-    ['junit', { outputFile: path.join(__dirname, 'junit-results', 'junit-report.xml') }],
+    ['junit', { outputFile: path.join(process.cwd(), 'junit-results', 'junit-report.xml') }],
     ['allure-playwright', { resultsDir: 'allure-results' }]
   ],
   timeout: 40 * 1000,
@@ -38,7 +38,8 @@ export default defineConfig({
 
 
   use: {
-    storageState: path.resolve(ROOT_PATH, 'storageState.json'),
+    
+    storageState: path.resolve(process.cwd(), 'storageState.json'),
     baseURL: process.env.BASE_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',

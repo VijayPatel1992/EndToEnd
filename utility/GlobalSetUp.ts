@@ -4,11 +4,10 @@ import path from 'path';
 import os from 'os';
 import { loginPage } from '../pages/loginPage';
 
-export const ROOT_PATH = path.join(__dirname, '..');
+export const ROOT_PATH = path.join(process.cwd());
 export const storageStatePath = path.resolve(ROOT_PATH, 'storageState.json');
 export const DOWNLOAD_PATH = path.resolve(ROOT_PATH, 'download');
 export const UPLOAD_PATH = path.resolve(ROOT_PATH, 'fileToUpload');
-
 
 const allureDir = path.resolve(ROOT_PATH, 'allure-results');
 
