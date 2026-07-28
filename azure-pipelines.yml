@@ -24,6 +24,9 @@ variables:
   - group: UAT-Variables
 
 steps:
+# 0. Checkout latest repo state
+- checkout: self
+
 # 1. Install Node.js
 - task: UseNode@1
   inputs:
@@ -35,16 +38,17 @@ steps:
     npm ci
     npx playwright install --with-deps
   displayName: 'Install dependencies and browsers'
+  workingDirectory: $(System.DefaultWorkingDirectory)
 
 # 3. Compile TypeScript (important for CI/CD)
-- script: |
-    npm run build
+- script: npm run build
   displayName: 'Compile TypeScript'
+  workingDirectory: $(System.DefaultWorkingDirectory)
 
 # 4. Run Playwright tests (uses dist/GlobalSetUp.js in CI)
-- script: |
-    npx playwright test --reporter=junit
+- script: npx playwright test --reporter=junit
   displayName: 'Run Playwright tests'
+  workingDirectory: $(System.DefaultWorkingDirectory)
 
 # 5. Publish JUnit results to DevOps Test tab
 - task: PublishTestResults@2
@@ -59,7 +63,7 @@ steps:
 - task: PublishBuildArtifacts@1
   condition: succeededOrFailed()
   inputs:
-    PathtoPublish: 'allure-results'
+    PathtoPublish: '$(System.DefaultWorkingDirectory)/allure-results'
     ArtifactName: 'AllureResults'
     publishLocation: 'Container'
   displayName: 'Publish Allure results'
@@ -68,7 +72,7 @@ steps:
 - task: PublishBuildArtifacts@1
   condition: succeededOrFailed()
   inputs:
-    PathtoPublish: 'playwright-report'
+    PathtoPublish: '$(System.DefaultWorkingDirectory)/playwright-report'
     ArtifactName: 'HTMLReport'
     publishLocation: 'Container'
   displayName: 'Publish HTML report'
