@@ -1,15 +1,27 @@
 trigger:
-  - main
+- main
 
 pool:
   vmImage: 'ubuntu-latest'
+
+parameters:
+  - name: environment
+    displayName: "Target Environment"
+    type: string
+    default: "qa"
+    values:
+      - qa
+      - uat
 
 variables:
 - name: CI
   value: true
 - name: NODE_ENV
-  value: qa   # switch to 'uat' when needed
-- group: PlaywrightSecrets   # contains BASE_URL, LOGIN_USERNAME, LOGIN_PASSWORD
+  value: ${{ parameters.environment }}
+- ${{ if eq(parameters.environment, 'qa') }}:
+  - group: QA-Variables
+- ${{ if eq(parameters.environment, 'uat') }}:
+  - group: UAT-Variables
 
 steps:
 # 1. Install Node.js
@@ -36,6 +48,7 @@ steps:
 
 # 5. Publish JUnit results to DevOps Test tab
 - task: PublishTestResults@2
+  condition: succeededOrFailed()
   inputs:
     testResultsFiles: '**/junit-results/junit-report.xml'
     testResultsFormat: 'JUnit'
@@ -44,6 +57,7 @@ steps:
 
 # 6. Publish Allure results as artifact
 - task: PublishBuildArtifacts@1
+  condition: succeededOrFailed()
   inputs:
     PathtoPublish: 'allure-results'
     ArtifactName: 'AllureResults'
@@ -52,6 +66,7 @@ steps:
 
 # 7. Publish Playwright HTML report as artifact
 - task: PublishBuildArtifacts@1
+  condition: succeededOrFailed()
   inputs:
     PathtoPublish: 'playwright-report'
     ArtifactName: 'HTMLReport'
