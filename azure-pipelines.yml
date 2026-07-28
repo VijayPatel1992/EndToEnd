@@ -1,5 +1,5 @@
 trigger:
-- main
+- none   # auto-run on commits to main; remove if you want only manual runs
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -38,19 +38,29 @@ steps:
     npm ci
     npx playwright install --with-deps
   displayName: 'Install dependencies and browsers'
-  workingDirectory: $(System.DefaultWorkingDirectory)
+  workingDirectory: $(Build.SourcesDirectory)
 
-# 3. Compile TypeScript (important for CI/CD)
+# 3. Verify package.json before build
+- script: |
+    pwd
+    ls -l package.json
+    cat package.json | grep build
+  displayName: 'Verify package.json'
+  workingDirectory: $(Build.SourcesDirectory)
+
+# 4. Compile TypeScript
 - script: npm run build
   displayName: 'Compile TypeScript'
-  workingDirectory: $(System.DefaultWorkingDirectory)
+  workingDirectory: $(Build.SourcesDirectory)
 
-# 4. Run Playwright tests (uses dist/GlobalSetUp.js in CI)
-- script: npx playwright test --reporter=junit
+# 5. Run Playwright tests (uses dist/GlobalSetUp.js in CI)
+- script: |
+    mkdir -p junit-results
+    npx playwright test --reporter=junit
   displayName: 'Run Playwright tests'
-  workingDirectory: $(System.DefaultWorkingDirectory)
+  workingDirectory: $(Build.SourcesDirectory)
 
-# 5. Publish JUnit results to DevOps Test tab
+# 6. Publish JUnit results to DevOps Test tab
 - task: PublishTestResults@2
   condition: succeededOrFailed()
   inputs:
@@ -59,20 +69,20 @@ steps:
     failTaskOnFailedTests: true
   displayName: 'Publish JUnit results'
 
-# 6. Publish Allure results as artifact
+# 7. Publish Allure results as artifact
 - task: PublishBuildArtifacts@1
   condition: succeededOrFailed()
   inputs:
-    PathtoPublish: '$(System.DefaultWorkingDirectory)/allure-results'
+    PathtoPublish: '$(Build.SourcesDirectory)/allure-results'
     ArtifactName: 'AllureResults'
     publishLocation: 'Container'
   displayName: 'Publish Allure results'
 
-# 7. Publish Playwright HTML report as artifact
+# 8. Publish Playwright HTML report as artifact
 - task: PublishBuildArtifacts@1
   condition: succeededOrFailed()
   inputs:
-    PathtoPublish: '$(System.DefaultWorkingDirectory)/playwright-report'
+    PathtoPublish: '$(Build.SourcesDirectory)/playwright-report'
     ArtifactName: 'HTMLReport'
     publishLocation: 'Container'
   displayName: 'Publish HTML report'
