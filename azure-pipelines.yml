@@ -56,7 +56,7 @@ steps:
 # 4. Run Playwright tests (uses dist/GlobalSetUp.js in CI)
 - script: |
     mkdir -p junit-results
-    npx playwright test --reporter=junit
+    npx playwright test
   displayName: 'Run Playwright tests'
   workingDirectory: $(Build.SourcesDirectory)
 
@@ -86,3 +86,14 @@ steps:
     ArtifactName: 'HTMLReport'
     publishLocation: 'Container'
   displayName: 'Publish HTML report'
+
+# 8. Publish test result as artifact
+- task: PublishBuildArtifacts@1
+  condition: succeededOrFailed()
+  inputs:
+    PathtoPublish: '$(Build.SourcesDirectory)/test-results'
+    ArtifactName: 'TestResults'
+    publishLocation: 'Container'
+  displayName: 'Publish test results (screenshots, videos, traces)'
+  
+ 
