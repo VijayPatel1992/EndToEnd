@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT_PATH = path.join(__dirname, '..');
+const ROOT_PATH = path.join(process.cwd(), '..');
 const storageStatePath = path.resolve(ROOT_PATH, 'storageState.json');
 const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : `.env.qa`;
 
