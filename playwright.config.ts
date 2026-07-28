@@ -2,30 +2,22 @@ import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import path from 'node:path';
 import * as fs from 'fs';
-import { ROOT_PATH, storageStatePath } from './utility/GlobalSetUp';
+import { ROOT_PATH } from './utility/GlobalSetUp';
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
+
+const isCI = !!process.env.CI;
 const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : `.env.qa`;
+
 console.log('Loading env file from:', path.resolve(ROOT_PATH, 'env', envFile));
 dotenv.config({ path: path.resolve(ROOT_PATH, 'env', envFile) });
 console.log(`ENV file successfully loaded - ${envFile}`);
 
-console.log('Storage state path in Config file:', storageStatePath);
-console.log('Storage state file exists:', fs.existsSync(storageStatePath));
 
-// Determine which storage state to use
-let finalStorageStatePath: string | undefined;
-if (fs.existsSync(storageStatePath)) {
-  finalStorageStatePath = storageStatePath;
-  console.log('✓ Using existing storage state file');
-} else {
-  console.warn('⚠ Storage state file does not exist yet. It will be created by globalSetup.');
-  // Don't set storageState in use config if file doesn't exist yet
-  // It will be created during globalSetup
-}
+
 
 export default defineConfig({
   testDir: './tests',
@@ -39,11 +31,13 @@ export default defineConfig({
     ['allure-playwright', { resultsDir: 'allure-results' }]
   ],
   timeout: 40 * 1000,
-  globalSetup: require.resolve('./utility/GlobalSetUp.ts'),
-  
+  globalSetup: isCI
+    ? require.resolve('./dist/utility/GlobalSetUp.js')
+    : require.resolve('./utility/GlobalSetUp.ts'),
+    
   
   use: {
-    ...(finalStorageStatePath ? { storageState: finalStorageStatePath } : {}),
+    storageState:  path.resolve(ROOT_PATH, 'storageState.json'),
     baseURL: process.env.BASE_URL,
     trace: 'on',
     screenshot: 'on',
