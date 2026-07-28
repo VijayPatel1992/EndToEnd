@@ -18,6 +18,9 @@ export class loginPage {
     await this.usernameInput.fill(username);
     await this.passwordInput.fill(password);
     await this.loginButton.click();
+    await this.page.waitForTimeout(2000);
+     // Wait for URL to change to dashboard or for a dashboard element
+  await this.page.waitForURL(/dashboard/, { timeout: 30000 });
   }
 
 

@@ -20,6 +20,8 @@ if (!isCI) {
   console.log(`ENV file successfully loaded - ${envFile}`);
 }
 
+console.log(`playwright config Storage state path: ${path.resolve(process.cwd(), 'storageState.json')}`);
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -39,6 +41,7 @@ export default defineConfig({
 
   use: {
     
+    
     storageState: path.resolve(process.cwd(), 'storageState.json'),
     baseURL: process.env.BASE_URL,
     trace: 'retain-on-failure',
@@ -49,7 +52,9 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'],
+         viewport: { width: 1280, height: 720 } 
+       },
     },
 
     // {
