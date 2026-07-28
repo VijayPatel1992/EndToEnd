@@ -7,7 +7,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["node", "playwright"],
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "rootDir": "."
   },
   "include": [
     "playwright.config.ts",

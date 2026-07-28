@@ -12,7 +12,8 @@
     "diagnostics": "node ./utility/diagnostics.js",
     "report": "npx playwright show-report",
     "allure:generate": "npx allure generate allure-results -o allure-report --clean",
-    "allure:open": "npx allure open allure-report"
+    "allure:open": "npx allure open allure-report",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
