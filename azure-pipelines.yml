@@ -14,14 +14,15 @@ parameters:
       - uat
 
 variables:
-- name: CI
-  value: true
-- name: NODE_ENV
-  value: ${{ parameters.environment }}
-- ${{ if eq(parameters.environment, 'qa') }}:
-  - group: QA-Variables
-- ${{ if eq(parameters.environment, 'uat') }}:
-  - group: UAT-Variables
+  - name: CI
+    value: true
+  - name: NODE_ENV
+    value: ${{ parameters.environment }}
+  - ${{ if eq(parameters.environment, 'qa') }}:
+    - group: QA-Variables
+  - ${{ if eq(parameters.environment, 'uat') }}:
+    - group: UAT-Variables
+  - group: StaticWebAppSecrets   # contains deployment_token
 
 steps:
 # 0. Checkout latest repo state
@@ -40,20 +41,12 @@ steps:
   displayName: 'Install dependencies and browsers'
   workingDirectory: $(Build.SourcesDirectory)
 
-  # 2.5. Debug: check working directory and package.json
-- script: |
-    echo "Current directory: $(pwd)"
-    echo "Contents of package.json:"
-    cat package.json
-  displayName: 'Debug package.json location'
-  workingDirectory: $(Build.SourcesDirectory)
-
 # 3. Compile TypeScript
 - script: npm run build
   displayName: 'Compile TypeScript'
   workingDirectory: $(Build.SourcesDirectory)
 
-# 4. Run Playwright tests (uses dist/GlobalSetUp.js in CI)
+# 4. Run Playwright tests
 - script: |
     mkdir -p junit-results
     npx playwright test
@@ -69,7 +62,12 @@ steps:
     failTaskOnFailedTests: true
   displayName: 'Publish JUnit results'
 
-# 6. Publish Allure results as artifact
+# 6. Generate Allure HTML report
+- script: |
+    npx allure generate $(Build.SourcesDirectory)/allure-results --clean -o $(Build.SourcesDirectory)/allure-report
+  displayName: 'Generate Allure HTML Report'
+
+# 7. Publish Allure results as artifact
 - task: PublishBuildArtifacts@1
   condition: succeededOrFailed()
   inputs:
@@ -78,16 +76,16 @@ steps:
     publishLocation: 'Container'
   displayName: 'Publish Allure results'
 
-# 7. Publish Playwright HTML report as artifact
+# 8. Publish Playwright HTML report as artifact
 - task: PublishBuildArtifacts@1
   condition: succeededOrFailed()
   inputs:
     PathtoPublish: '$(Build.SourcesDirectory)/playwright-report'
     ArtifactName: 'HTMLReport'
     publishLocation: 'Container'
-  displayName: 'Publish HTML report'
+  displayName: 'Publish Playwright HTML report'
 
-# 8. Publish test result as artifact
+# 9. Publish test result artifacts (screenshots, videos, traces)
 - task: PublishBuildArtifacts@1
   condition: succeededOrFailed()
   inputs:
@@ -95,5 +93,11 @@ steps:
     ArtifactName: 'TestResults'
     publishLocation: 'Container'
   displayName: 'Publish test results (screenshots, videos, traces)'
-  
- 
+
+# 10. Deploy Allure HTML report to Azure Static Web App
+- task: AzureStaticWebApp@0
+  inputs:
+    app_location: '$(Build.SourcesDirectory)/allure-report'   # folder with index.html
+    skip_app_build: true                                     # no build needed for static HTML
+    azure_static_web_apps_api_token: $(deployment_token)      # from variable group
+  displayName: 'Deploy Allure Report to Azure Static Web App'
