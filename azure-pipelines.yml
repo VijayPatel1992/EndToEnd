@@ -64,6 +64,7 @@ steps:
 
 # 6. Generate Allure HTML report
 - script: |
+    condition: succeededOrFailed()
     npx allure generate $(Build.SourcesDirectory)/allure-results --clean -o $(Build.SourcesDirectory)/allure-report
   displayName: 'Generate Allure HTML Report'
 
@@ -96,6 +97,7 @@ steps:
 
 # 10. Deploy Allure HTML report to Azure Static Web App
 - task: AzureStaticWebApp@0
+  condition: succeededOrFailed()
   inputs:
     app_location: '$(Build.SourcesDirectory)/allure-report'   # folder with index.html
     skip_app_build: true                                     # no build needed for static HTML
