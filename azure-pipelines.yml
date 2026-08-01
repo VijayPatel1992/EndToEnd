@@ -37,35 +37,26 @@ jobs:
       version: '22.x'
     displayName: 'Install Node.js'
 
-  # 2. Cache npm dependencies
-  - task: Cache@2
-    inputs:
-      key: 'npm | "$(Agent.OS)" | package-lock.json'
-      restoreKeys: |
-        npm | "$(Agent.OS)"
-      path: $(Build.SourcesDirectory)/node_modules
-    displayName: 'Cache npm dependencies'
-
-  # 3. Install dependencies + Playwright browsers
+  # 2. Install dependencies + Playwright browsers
   - script: |
       npm ci
       npx playwright install --with-deps
     displayName: 'Install dependencies and browsers'
     workingDirectory: $(Build.SourcesDirectory)
 
-  # 4. Compile TypeScript
+  # 3. Compile TypeScript
   - script: npm run build
     displayName: 'Compile TypeScript'
     workingDirectory: $(Build.SourcesDirectory)
 
-  # 5. Run Playwright tests with JUnit output
+  # 4. Run Playwright tests
   - script: |
       mkdir -p junit-results
       npx playwright test --reporter=junit --output=junit-results
     displayName: 'Run Playwright tests'
     workingDirectory: $(Build.SourcesDirectory)
 
-  # 6. Publish JUnit results
+  # 5. Publish JUnit results
   - task: PublishTestResults@2
     inputs:
       testResultsFiles: '**/junit-results/*.xml'
@@ -73,38 +64,33 @@ jobs:
       failTaskOnFailedTests: true
     displayName: 'Publish JUnit results'
 
-  # 7. Install Allure CLI
+  # 6. Install Allure CLI
   - script: npm install -g allure-commandline --force
     displayName: 'Install Allure Commandline'
 
-  # 8. Generate Allure HTML report
+  # 7. Generate Allure HTML report
   - script: |
       npx allure generate $(Build.SourcesDirectory)/allure-results --clean -o $(Build.SourcesDirectory)/allure-report
     displayName: 'Generate Allure HTML Report'
     workingDirectory: $(Build.SourcesDirectory)
 
-  # 9. Archive all reports together
-  - task: ArchiveFiles@2
-    inputs:
-      rootFolderOrFile: '$(Build.SourcesDirectory)'
-      includeRootFolder: false
-      archiveType: 'zip'
-      archiveFile: '$(Build.ArtifactStagingDirectory)/Reports.zip'
-      replaceExistingArchive: true
-    displayName: 'Archive Reports'
+  # 8. Verify Allure report folder
+  - script: |
+      ls -l $(Build.SourcesDirectory)/allure-report
+    displayName: 'Verify Allure report folder contents'
 
-  # 10. Publish combined artifact
+  # 9. Publish Allure results as artifact
   - task: PublishBuildArtifacts@1
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)/Reports.zip'
-      ArtifactName: 'Reports'
+      PathtoPublish: '$(Build.SourcesDirectory)/allure-report'
+      ArtifactName: 'AllureReport'
       publishLocation: 'Container'
-    displayName: 'Publish Combined Reports'
+    displayName: 'Publish Allure HTML report artifact'
 
-  # 11. Deploy Allure HTML report
+  # 10. Deploy Allure HTML report to Azure Static Web App
   - task: AzureStaticWebApp@0
     inputs:
-      app_location: '$(Build.SourcesDirectory)/allure-report'
-      skip_app_build: true
+      app_location: 'allure-report'   # relative path, not absolute
+      skip_app_build: true            # no build needed for static HTML
       azure_static_web_apps_api_token: $(deployment_token)
     displayName: 'Deploy Allure Report to Azure Static Web App'
