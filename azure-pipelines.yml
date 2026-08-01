@@ -64,9 +64,10 @@ steps:
 
 # 6. Generate Allure HTML report
 - script: |
-    condition: succeededOrFailed()
     npx allure generate $(Build.SourcesDirectory)/allure-results --clean -o $(Build.SourcesDirectory)/allure-report
   displayName: 'Generate Allure HTML Report'
+  condition: succeededOrFailed()
+  workingDirectory: $(Build.SourcesDirectory)
 
 # 7. Publish Allure results as artifact
 - task: PublishBuildArtifacts@1
