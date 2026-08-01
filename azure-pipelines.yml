@@ -1,5 +1,5 @@
 trigger:
-- none   # manual runs only, no auto-trigger on commits
+- none   # manual runs only
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -24,83 +24,87 @@ variables:
     - group: UAT-Variables
   - group: StaticWebAppSecrets   # contains deployment_token
 
-steps:
-# 0. Checkout latest repo state
-- checkout: self
-
-# 1. Install Node.js
-- task: UseNode@1
-  inputs:
-    version: '22.x'
-  displayName: 'Install Node.js'
-
-# 2. Install dependencies and Playwright browsers
-- script: |
-    npm ci
-    npx playwright install --with-deps
-  displayName: 'Install dependencies and browsers'
-  workingDirectory: $(Build.SourcesDirectory)
-
-# 3. Compile TypeScript
-- script: npm run build
-  displayName: 'Compile TypeScript'
-  workingDirectory: $(Build.SourcesDirectory)
-
-# 4. Run Playwright tests
-- script: |
-    mkdir -p junit-results
-    npx playwright test
-  displayName: 'Run Playwright tests'
-  workingDirectory: $(Build.SourcesDirectory)
-
-# 5. Publish JUnit results to DevOps Test tab
-- task: PublishTestResults@2
+jobs:
+- job: TestAndReport
   condition: succeededOrFailed()
-  inputs:
-    testResultsFiles: '**/junit-results/junit-report.xml'
-    testResultsFormat: 'JUnit'
-    failTaskOnFailedTests: true
-  displayName: 'Publish JUnit results'
+  steps:
+  # 0. Checkout
+  - checkout: self
 
-# 6. Generate Allure HTML report
-- script: |
-    npx allure generate $(Build.SourcesDirectory)/allure-results --clean -o $(Build.SourcesDirectory)/allure-report
-  displayName: 'Generate Allure HTML Report'
-  condition: succeededOrFailed()
-  workingDirectory: $(Build.SourcesDirectory)
+  # 1. Install Node.js
+  - task: UseNode@1
+    inputs:
+      version: '22.x'
+    displayName: 'Install Node.js'
 
-# 7. Publish Allure results as artifact
-- task: PublishBuildArtifacts@1
-  condition: succeededOrFailed()
-  inputs:
-    PathtoPublish: '$(Build.SourcesDirectory)/allure-results'
-    ArtifactName: 'AllureResults'
-    publishLocation: 'Container'
-  displayName: 'Publish Allure results'
+  # 2. Cache npm dependencies
+  - task: Cache@2
+    inputs:
+      key: 'npm | "$(Agent.OS)" | package-lock.json'
+      restoreKeys: |
+        npm | "$(Agent.OS)"
+      path: $(Build.SourcesDirectory)/node_modules
+    displayName: 'Cache npm dependencies'
 
-# 8. Publish Playwright HTML report as artifact
-- task: PublishBuildArtifacts@1
-  condition: succeededOrFailed()
-  inputs:
-    PathtoPublish: '$(Build.SourcesDirectory)/playwright-report'
-    ArtifactName: 'HTMLReport'
-    publishLocation: 'Container'
-  displayName: 'Publish Playwright HTML report'
+  # 3. Install dependencies + Playwright browsers
+  - script: |
+      npm ci
+      npx playwright install --with-deps
+    displayName: 'Install dependencies and browsers'
+    workingDirectory: $(Build.SourcesDirectory)
 
-# 9. Publish test result artifacts (screenshots, videos, traces)
-- task: PublishBuildArtifacts@1
-  condition: succeededOrFailed()
-  inputs:
-    PathtoPublish: '$(Build.SourcesDirectory)/test-results'
-    ArtifactName: 'TestResults'
-    publishLocation: 'Container'
-  displayName: 'Publish test results (screenshots, videos, traces)'
+  # 4. Compile TypeScript
+  - script: npm run build
+    displayName: 'Compile TypeScript'
+    workingDirectory: $(Build.SourcesDirectory)
 
-# 10. Deploy Allure HTML report to Azure Static Web App
-- task: AzureStaticWebApp@0
-  condition: succeededOrFailed()
-  inputs:
-    app_location: '$(Build.SourcesDirectory)/allure-report'   # folder with index.html
-    skip_app_build: true                                     # no build needed for static HTML
-    azure_static_web_apps_api_token: $(deployment_token)      # from variable group
-  displayName: 'Deploy Allure Report to Azure Static Web App'
+  # 5. Run Playwright tests with JUnit output
+  - script: |
+      mkdir -p junit-results
+      npx playwright test --reporter=junit --output=junit-results
+    displayName: 'Run Playwright tests'
+    workingDirectory: $(Build.SourcesDirectory)
+
+  # 6. Publish JUnit results
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: '**/junit-results/*.xml'
+      testResultsFormat: 'JUnit'
+      failTaskOnFailedTests: true
+    displayName: 'Publish JUnit results'
+
+  # 7. Install Allure CLI
+  - script: npm install -g allure-commandline --force
+    displayName: 'Install Allure Commandline'
+
+  # 8. Generate Allure HTML report
+  - script: |
+      npx allure generate $(Build.SourcesDirectory)/allure-results --clean -o $(Build.SourcesDirectory)/allure-report
+    displayName: 'Generate Allure HTML Report'
+    workingDirectory: $(Build.SourcesDirectory)
+
+  # 9. Archive all reports together
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(Build.SourcesDirectory)'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/Reports.zip'
+      replaceExistingArchive: true
+    displayName: 'Archive Reports'
+
+  # 10. Publish combined artifact
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/Reports.zip'
+      ArtifactName: 'Reports'
+      publishLocation: 'Container'
+    displayName: 'Publish Combined Reports'
+
+  # 11. Deploy Allure HTML report
+  - task: AzureStaticWebApp@0
+    inputs:
+      app_location: '$(Build.SourcesDirectory)/allure-report'
+      skip_app_build: true
+      azure_static_web_apps_api_token: $(deployment_token)
+    displayName: 'Deploy Allure Report to Azure Static Web App'
