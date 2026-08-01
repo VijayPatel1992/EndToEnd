@@ -1,5 +1,5 @@
 trigger:
-- none   # manual runs only
+- none   # manual runs only, no auto-trigger on commits
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -14,83 +14,86 @@ parameters:
       - uat
 
 variables:
-  - name: CI
-    value: true
-  - name: NODE_ENV
-    value: ${{ parameters.environment }}
-  - ${{ if eq(parameters.environment, 'qa') }}:
-    - group: QA-Variables
-  - ${{ if eq(parameters.environment, 'uat') }}:
-    - group: UAT-Variables
-  - group: StaticWebAppSecrets   # contains deployment_token
+- name: CI
+  value: true
+- name: NODE_ENV
+  value: ${{ parameters.environment }}
+- ${{ if eq(parameters.environment, 'qa') }}:
+  - group: QA-Variables
+- ${{ if eq(parameters.environment, 'uat') }}:
+  - group: UAT-Variables
 
-jobs:
-- job: TestAndReport
+steps:
+# 0. Checkout latest repo state
+- checkout: self
+
+# 1. Install Node.js
+- task: UseNode@1
+  inputs:
+    version: '22.x'
+  displayName: 'Install Node.js'
+
+# 2. Install dependencies and Playwright browsers
+- script: |
+    npm ci
+    npx playwright install --with-deps
+  displayName: 'Install dependencies and browsers'
+  workingDirectory: $(Build.SourcesDirectory)
+
+  # 2.5. Debug: check working directory and package.json
+- script: |
+    echo "Current directory: $(pwd)"
+    echo "Contents of package.json:"
+    cat package.json
+  displayName: 'Debug package.json location'
+  workingDirectory: $(Build.SourcesDirectory)
+
+# 3. Compile TypeScript
+- script: npm run build
+  displayName: 'Compile TypeScript'
+  workingDirectory: $(Build.SourcesDirectory)
+
+# 4. Run Playwright tests (uses dist/GlobalSetUp.js in CI)
+- script: |
+    mkdir -p junit-results
+    npx playwright test
+  displayName: 'Run Playwright tests'
+  workingDirectory: $(Build.SourcesDirectory)
+
+# 5. Publish JUnit results to DevOps Test tab
+- task: PublishTestResults@2
   condition: succeededOrFailed()
-  steps:
-  # 0. Checkout
-  - checkout: self
+  inputs:
+    testResultsFiles: '**/junit-results/junit-report.xml'
+    testResultsFormat: 'JUnit'
+    failTaskOnFailedTests: true
+  displayName: 'Publish JUnit results'
 
-  # 1. Install Node.js
-  - task: UseNode@1
-    inputs:
-      version: '22.x'
-    displayName: 'Install Node.js'
+# 6. Publish Allure results as artifact
+- task: PublishBuildArtifacts@1
+  condition: succeededOrFailed()
+  inputs:
+    PathtoPublish: '$(Build.SourcesDirectory)/allure-results'
+    ArtifactName: 'AllureResults'
+    publishLocation: 'Container'
+  displayName: 'Publish Allure results'
 
-  # 2. Install dependencies + Playwright browsers
-  - script: |
-      npm ci
-      npx playwright install --with-deps
-    displayName: 'Install dependencies and browsers'
-    workingDirectory: $(Build.SourcesDirectory)
+# 7. Publish Playwright HTML report as artifact
+- task: PublishBuildArtifacts@1
+  condition: succeededOrFailed()
+  inputs:
+    PathtoPublish: '$(Build.SourcesDirectory)/playwright-report'
+    ArtifactName: 'HTMLReport'
+    publishLocation: 'Container'
+  displayName: 'Publish HTML report'
 
-  # 3. Compile TypeScript
-  - script: npm run build
-    displayName: 'Compile TypeScript'
-    workingDirectory: $(Build.SourcesDirectory)
-
-  # 4. Run Playwright tests
-  - script: |
-      mkdir -p junit-results
-      npx playwright test --reporter=junit --output=junit-results
-    displayName: 'Run Playwright tests'
-    workingDirectory: $(Build.SourcesDirectory)
-
-  # 5. Publish JUnit results
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFiles: '**/junit-results/*.xml'
-      testResultsFormat: 'JUnit'
-      failTaskOnFailedTests: true
-    displayName: 'Publish JUnit results'
-
-  # 6. Install Allure CLI
-  - script: npm install -g allure-commandline --force
-    displayName: 'Install Allure Commandline'
-
-  # 7. Generate Allure HTML report
-  - script: |
-      npx allure generate $(Build.SourcesDirectory)/allure-results --clean -o $(Build.SourcesDirectory)/allure-report --single-file
-    displayName: 'Generate Allure HTML Report'
-    workingDirectory: $(Build.SourcesDirectory)
-
-  # 8. Verify Allure report folder
-  - script: |
-      ls -l $(Build.SourcesDirectory)/allure-report
-    displayName: 'Verify Allure report folder contents'
-
-  # 9. Publish Allure results as artifact
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)/allure-report'
-      ArtifactName: 'AllureReport'
-      publishLocation: 'Container'
-    displayName: 'Publish Allure HTML report artifact'
-
-  # 10. Deploy Allure HTML report to Azure Static Web App
-  - task: AzureStaticWebApp@0
-    inputs:
-      app_location: 'allure-report'   # relative path, not absolute
-      skip_app_build: true            # no build needed for static HTML
-      azure_static_web_apps_api_token: $(deployment_token)
-    displayName: 'Deploy Allure Report to Azure Static Web App'
+# 8. Publish test result as artifact
+- task: PublishBuildArtifacts@1
+  condition: succeededOrFailed()
+  inputs:
+    PathtoPublish: '$(Build.SourcesDirectory)/test-results'
+    ArtifactName: 'TestResults'
+    publishLocation: 'Container'
+  displayName: 'Publish test results (screenshots, videos, traces)'
+  
+ 
