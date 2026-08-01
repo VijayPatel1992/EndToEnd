@@ -70,7 +70,7 @@ jobs:
 
   # 7. Generate Allure HTML report
   - script: |
-      npx allure generate $(Build.SourcesDirectory)/allure-results --clean -o $(Build.SourcesDirectory)/allure-report
+      npx allure generate $(Build.SourcesDirectory)/allure-results --clean -o $(Build.SourcesDirectory)/allure-report --single-file
     displayName: 'Generate Allure HTML Report'
     workingDirectory: $(Build.SourcesDirectory)
 
