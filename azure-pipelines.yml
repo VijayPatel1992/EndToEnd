@@ -95,5 +95,23 @@ steps:
     ArtifactName: 'TestResults'
     publishLocation: 'Container'
   displayName: 'Publish test results (screenshots, videos, traces)'
+
+# 9. Generate Allure single-file HTML report
+- script: |
+    npm install -g allure-commandline --force
+    npx allure generate $(Build.SourcesDirectory)/allure-results --clean -o $(Build.SourcesDirectory)/allure-report-single --single-file
+    ls -l $(Build.SourcesDirectory)/allure-report-single
+  displayName: 'Generate Allure Single-File Report'
+  workingDirectory: $(Build.SourcesDirectory)
+
+# 10. Deploy Allure single-file report to Azure Static Web App
+- task: AzureStaticWebApp@0
+  condition: succeededOrFailed()
+  inputs:
+    app_location: 'allure-report-single'   # relative path, contains single index.html
+    skip_app_build: true                   # no build needed for static HTML
+    azure_static_web_apps_api_token: $(deployment_token)
+  displayName: 'Deploy Single-File Allure Report to Azure Static Web App'
+
   
  
