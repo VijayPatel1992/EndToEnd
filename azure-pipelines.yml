@@ -113,3 +113,12 @@ steps:
     skip_app_build: true                   # no build needed for static HTML
     azure_static_web_apps_api_token: $(swa_token)
   displayName: 'Deploy Single-File Allure Report to Azure Static Web App'
+
+# 11. Publish Allure Report as artifact
+- task: PublishBuildArtifacts@1
+  condition: succeededOrFailed()
+  inputs:
+    PathtoPublish: '$(Build.SourcesDirectory)/allure-report-single'
+    ArtifactName: 'Allure Report'
+    publishLocation: 'Container'
+  displayName: 'Publish test results (screenshots, videos, traces)'
