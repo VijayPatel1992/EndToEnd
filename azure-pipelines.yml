@@ -113,6 +113,3 @@ steps:
     skip_app_build: true                   # no build needed for static HTML
     azure_static_web_apps_api_token: $(swa_token)
   displayName: 'Deploy Single-File Allure Report to Azure Static Web App'
-
-  
- 
