@@ -121,4 +121,4 @@ steps:
     PathtoPublish: '$(Build.SourcesDirectory)/allure-report-single'
     ArtifactName: 'Allure Report'
     publishLocation: 'Container'
-  displayName: 'Publish test results (screenshots, videos, traces)'
+  displayName: 'Publish Single-File Allure Report'
