@@ -75,6 +75,16 @@ test.describe.serial("Add Candidate and Download", () => {
         console.log('Expected Candidate:', CandidateData.SearchCandidate["CandidateName"]);
         expect(CandidateList).toContain(CandidateData.SearchCandidate["CandidateName"]);
 
+        // Force screenshot capture even though test passed
+        const timestamp = Date.now();
+        const fileName = `test-results/${test.info().title.replace(/\s+/g, '_')}_${timestamp}.png`;
+
+        const screenshot = await page.screenshot({ path: fileName });
+        test.info().attach(test.info().title.replace(/\s+/g, '_'), {
+            body: screenshot,
+            contentType: 'image/png'
+        });
+
     });
 
     test('[4]Download Candidate Details', async ({ page }) => {

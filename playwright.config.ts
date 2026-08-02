@@ -37,7 +37,7 @@ export default defineConfig({
       token: process.env.AZURE_TOKEN,
       planId: 5,
       projectName: 'Playwright End To End',
-      publishTestResultsMode: 'testRun'
+      publishTestResultsMode: 'testRun',
     }],
  
   ],
