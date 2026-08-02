@@ -22,6 +22,7 @@ variables:
   - group: QA-Variables
 - ${{ if eq(parameters.environment, 'uat') }}:
   - group: UAT-Variables
+- group: StaticWebAppSecrets   # contains deployment_token
 
 steps:
 # 0. Checkout latest repo state
