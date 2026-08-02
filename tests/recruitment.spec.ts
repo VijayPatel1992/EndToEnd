@@ -2,12 +2,14 @@ import { test, Page, expect } from '@playwright/test';
 import { loginPage } from '../pages/loginPage';
 import { navigationPage } from '../pages/navigationPage';
 import { recruitmentPage } from '../pages/recruitmentPage'
+
 import LeftPaneMenu from '../constant/LeftPaneNavigation.json';
 import path from 'node:path';
 import * as fs from 'fs'
-import { ROOT_PATH } from '../utility/GlobalSetUp';
+import { ROOT_PATH, storageStatePath } from '../utility/GlobalSetUp';
 import { DOWNLOAD_PATH } from '../utility/GlobalSetUp';
 import { FileHelper } from '../utility/fileHelper'
+
 
 const URL = process.env.BASE_URL!;
 let ObjLoginPage: loginPage;
@@ -16,6 +18,9 @@ let ObjRecruitmentPage: recruitmentPage;
 
 let CandidateDetailsPath;
 let CandidateData: any;
+
+const userName = process.env.LOGIN_USERNAME!;
+const password = process.env.LOGIN_PASSWORD!;
 
 test.beforeAll(async () => {
     // One-time setup before the suite
@@ -34,6 +39,11 @@ test.beforeEach(async ({ page }) => {
     ObjNavigationPage = new navigationPage(page);
     ObjRecruitmentPage = new recruitmentPage(page);
     await page.goto('/web/index.php/dashboard/index');
+    if (page.url().includes('/auth/login')) {
+        await ObjLoginPage.DoLogin(userName, password);
+        await page.goto('/web/index.php/dashboard/index');
+        await page.context().storageState({ path: storageStatePath });
+    }
 })
 
 test.afterEach(async ({ page }, testInfo) => {
@@ -52,7 +62,7 @@ test.afterAll(async () => {
 
 test.describe.serial("Add Candidate and Download", () => {
 
-    test('Add Candidate', { tag: '@debugg' }, async ({ page }) => {
+    test('[3]Add Candidate', { tag: '@debugg' }, async ({ page }) => {
         await ObjNavigationPage.NavigationThroughLeftPane(LeftPaneMenu.Recruitment);
         await ObjRecruitmentPage.AddCandidate();
         await ObjRecruitmentPage.FillCandidateDetails(CandidateData.validCandidate);
@@ -67,7 +77,7 @@ test.describe.serial("Add Candidate and Download", () => {
 
     });
 
-    test('Download Candidate Details', async ({ page }) => {
+    test('[4]Download Candidate Details', async ({ page }) => {
         await ObjNavigationPage.NavigationThroughLeftPane(LeftPaneMenu.Recruitment);
         await ObjRecruitmentPage.SearchCandidate(CandidateData.SearchCandidate["SearchKeyWord"], CandidateData.SearchCandidate["CandidateName"])
         const FilePath = await ObjRecruitmentPage.DownloadCandidateDetails(CandidateData.SearchCandidate["CandidateName"]);

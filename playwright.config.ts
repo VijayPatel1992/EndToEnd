@@ -31,7 +31,15 @@ export default defineConfig({
   reporter: [
     ['html'],
     ['junit', { outputFile: path.join(process.cwd(), 'junit-results', 'junit-report.xml') }],
-    ['allure-playwright', { resultsDir: 'allure-results' }]
+    ['allure-playwright', { resultsDir: 'allure-results' }],
+     ['@alex_neo/playwright-azure-reporter', {
+      orgUrl: 'https://dev.azure.com/patelvijay322',
+      token: process.env.AZURE_TOKEN,
+      planId: 5,
+      projectName: 'Playwright End To End',
+      publishTestResultsMode: 'testRun'
+    }],
+ 
   ],
   timeout: 40 * 1000,
   globalSetup: isCI
